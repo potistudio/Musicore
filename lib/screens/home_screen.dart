@@ -41,9 +41,10 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: Consumer<AudioProvider>(
-        builder: (context, audioProvider, child) {
-          if (audioProvider.songs.isEmpty) {
+      body: Selector<AudioProvider, List<SongModel>>(
+        selector: (_, provider) => provider.songs,
+        builder: (context, songs, child) {
+          if (songs.isEmpty) {
             return const Center(
               child: Text(
                 "No music found\nor permissions denied",
@@ -54,19 +55,23 @@ class _HomeScreenState extends State<HomeScreen> {
           }
 
           return ListView.separated(
-            itemCount: audioProvider.songs.length,
+            itemCount: songs.length,
             separatorBuilder: (context, index) => Divider(color: Colors.grey[900]),
             itemBuilder: (context, index) {
-              final SongModel song = audioProvider.songs[index];
+              final SongModel song = songs[index];
               return ListTile(
-                leading: Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[900],
-                    borderRadius: BorderRadius.circular(8),
+                leading: QueryArtworkWidget(
+                  id: song.id,
+                  type: ArtworkType.AUDIO,
+                  nullArtworkWidget: Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[900],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.music_note, color: Colors.white),
                   ),
-                  child: const Icon(Icons.music_note, color: Colors.white),
                 ),
                 title: Text(
                   song.title,
@@ -81,7 +86,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 onTap: () {
-                  audioProvider.playSong(index);
+                  Provider.of<AudioProvider>(context, listen: false).playSong(index);
                   Navigator.push(
                     context,
                     MaterialPageRoute(

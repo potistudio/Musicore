@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/audio_provider.dart';
@@ -7,9 +6,7 @@ import 'screens/home_screen.dart';
 void main() {
   runApp(
     MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => AudioProvider()),
-      ],
+      providers: [ChangeNotifierProvider(create: (_) => AudioProvider())],
       child: const MyApp(),
     ),
   );
@@ -21,7 +18,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Monochrome Music',
+      title: 'Musicore',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         brightness: Brightness.dark,

@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/audio_provider.dart';
@@ -32,7 +31,8 @@ class _WaveformSeekBarState extends State<WaveformSeekBar> {
   List<double> _getWaveform(BuildContext context) {
     // Helper to get waveform from provider
     final audioProvider = Provider.of<AudioProvider>(context, listen: false);
-    if (audioProvider.songs.isEmpty || audioProvider.currentIndex == null) return [];
+    if (audioProvider.songs.isEmpty || audioProvider.currentIndex == null)
+      return [];
 
     int id = audioProvider.songs[audioProvider.currentIndex!].id;
     return audioProvider.getOrGenerateWaveform(id, widget.duration);
@@ -50,7 +50,10 @@ class _WaveformSeekBarState extends State<WaveformSeekBar> {
     Duration currentEffectivePosition = _dragPosition;
 
     // Current Pixel Position
-    double currentPixel = (currentEffectivePosition.inMilliseconds / widget.duration.inMilliseconds) * totalWidth;
+    double currentPixel =
+        (currentEffectivePosition.inMilliseconds /
+            widget.duration.inMilliseconds) *
+        totalWidth;
 
     // New Pixel Position
     // Dragging RIGHT (positive delta) -> Waveform moves RIGHT -> Center stays -> Time decreases (moves left on waveform)
@@ -110,7 +113,9 @@ class _WaveformSeekBarState extends State<WaveformSeekBar> {
 
     // Tap is atomic, use widget.position or _dragPosition?
     // Usually widget.position as not dragging.
-    double currentPixel = (widget.position.inMilliseconds / widget.duration.inMilliseconds) * totalWidth;
+    double currentPixel =
+        (widget.position.inMilliseconds / widget.duration.inMilliseconds) *
+        totalWidth;
 
     double newPixel = currentPixel + offsetFromCenter;
     double progress = newPixel / totalWidth;
@@ -126,38 +131,44 @@ class _WaveformSeekBarState extends State<WaveformSeekBar> {
   @override
   Widget build(BuildContext context) {
     return Consumer<AudioProvider>(
-        builder: (context, audioProvider, child) {
-          if (audioProvider.songs.isEmpty || audioProvider.currentIndex == null) return const SizedBox();
-          int id = audioProvider.songs[audioProvider.currentIndex!].id;
-          List<double> waveform = audioProvider.getOrGenerateWaveform(id, widget.duration);
+      builder: (context, audioProvider, child) {
+        if (audioProvider.songs.isEmpty || audioProvider.currentIndex == null)
+          return const SizedBox();
+        int id = audioProvider.songs[audioProvider.currentIndex!].id;
+        List<double> waveform = audioProvider.getOrGenerateWaveform(
+          id,
+          widget.duration,
+        );
 
-          double totalWidth = _calculateTotalWidth(waveform); // Calculate here to pass to closures if needed?
-          // Actually safer to recalculate inside callback to rely on validated data or pass explicitly.
+        double totalWidth = _calculateTotalWidth(
+          waveform,
+        ); // Calculate here to pass to closures if needed?
+        // Actually safer to recalculate inside callback to rely on validated data or pass explicitly.
 
-          return GestureDetector(
-            onHorizontalDragStart: _onHorizontalDragStart,
-            onHorizontalDragUpdate: (d) => _onHorizontalDragUpdate(d, totalWidth),
-            onHorizontalDragEnd: _onHorizontalDragEnd,
-            onTapUp: _onTapUp,
-            child: SizedBox(
-               height: 120,
-               width: double.infinity,
-               child: CustomPaint(
-                 painter: CenterLockedWaveformPainter(
-                   waveform: waveform,
-                   barWidth: _barWidth,
-                   barSpacing: _barSpacing,
-                   playedColor: Colors.white,
-                   unplayedColor: Colors.grey[800]!,
-                   // Use drag position if dragging
-                   currentPosition: _isDragging ? _dragPosition : widget.position,
-                   totalDuration: widget.duration,
-                   // Important: pass context/viewport width to painter if needed for optimization
-                 ),
-               ),
+        return GestureDetector(
+          onHorizontalDragStart: _onHorizontalDragStart,
+          onHorizontalDragUpdate: (d) => _onHorizontalDragUpdate(d, totalWidth),
+          onHorizontalDragEnd: _onHorizontalDragEnd,
+          onTapUp: _onTapUp,
+          child: SizedBox(
+            height: 120,
+            width: double.infinity,
+            child: CustomPaint(
+              painter: CenterLockedWaveformPainter(
+                waveform: waveform,
+                barWidth: _barWidth,
+                barSpacing: _barSpacing,
+                playedColor: Colors.white,
+                unplayedColor: Colors.grey[800]!,
+                // Use drag position if dragging
+                currentPosition: _isDragging ? _dragPosition : widget.position,
+                totalDuration: widget.duration,
+                // Important: pass context/viewport width to painter if needed for optimization
+              ),
             ),
-          );
-        }
+          ),
+        );
+      },
     );
   }
 }
@@ -192,7 +203,9 @@ class CenterLockedWaveformPainter extends CustomPainter {
     // Which pixel of the waveform corresponds to the current time?
     double currentPixel = 0;
     if (totalDuration.inMilliseconds > 0) {
-       currentPixel = (currentPosition.inMilliseconds / totalDuration.inMilliseconds) * totalWidth;
+      currentPixel =
+          (currentPosition.inMilliseconds / totalDuration.inMilliseconds) *
+          totalWidth;
     }
 
     // We want currentPixel to be drawn at size.width / 2 (Center of Canvas).
@@ -238,7 +251,11 @@ class CenterLockedWaveformPainter extends CustomPainter {
       }
 
       paint.strokeWidth = barWidth;
-      canvas.drawLine(Offset(x + barWidth/2, y1), Offset(x + barWidth/2, y2), paint);
+      canvas.drawLine(
+        Offset(x + barWidth / 2, y1),
+        Offset(x + barWidth / 2, y2),
+        paint,
+      );
     }
 
     // Draw Center Line (Playhead)
@@ -249,7 +266,7 @@ class CenterLockedWaveformPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CenterLockedWaveformPainter oldDelegate) {
-     return oldDelegate.currentPosition != currentPosition ||
-            oldDelegate.waveform != waveform;
+    return oldDelegate.currentPosition != currentPosition ||
+        oldDelegate.waveform != waveform;
   }
 }

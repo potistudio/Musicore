@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/audio_provider.dart';
 import '../screens/player_screen.dart';
+import 'package:on_audio_query/on_audio_query.dart';
 
 class MiniPlayer extends StatelessWidget {
   const MiniPlayer({super.key});
@@ -30,14 +31,20 @@ class MiniPlayer extends StatelessWidget {
             child: Row(
               children: [
                 // Icon / Art
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[800],
-                    borderRadius: BorderRadius.circular(4),
+                QueryArtworkWidget(
+                  id: song.id,
+                  type: ArtworkType.AUDIO,
+                  artworkHeight: 40,
+                  artworkWidth: 40,
+                  nullArtworkWidget: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[800],
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: const Icon(Icons.music_note, color: Colors.white),
                   ),
-                  child: const Icon(Icons.music_note, color: Colors.white),
                 ),
                 const SizedBox(width: 12),
 
