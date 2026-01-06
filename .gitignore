@@ -7,7 +7,9 @@
 .buildlog/
 .history
 
-
+# macOS system dummy files
+.DS_Store
+Thumbs.db
 
 # Flutter repo-specific
 /bin/cache/
