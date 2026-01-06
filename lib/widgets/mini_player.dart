@@ -10,13 +10,20 @@ class MiniPlayer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AudioProvider>(
-      builder: (context, audioProvider, child) {
-        if (audioProvider.currentIndex == null || audioProvider.songs.isEmpty) {
+    return Selector<AudioProvider, SongModel?>(
+      selector: (_, provider) {
+        if (provider.currentIndex == null || provider.songs.isEmpty) {
+          return null;
+        }
+        if (provider.currentIndex! >= provider.songs.length) {
+          return null;
+        }
+        return provider.songs[provider.currentIndex!];
+      },
+      builder: (context, song, child) {
+        if (song == null) {
           return const SizedBox.shrink();
         }
-
-        final song = audioProvider.songs[audioProvider.currentIndex!];
 
         return GestureDetector(
           onTap: () {
@@ -77,17 +84,23 @@ class MiniPlayer extends StatelessWidget {
                 ),
 
                 // Controls
-                IconButton(
-                  icon: Icon(
-                    audioProvider.isPlaying ? Icons.pause : Icons.play_arrow,
-                    color: Colors.white,
-                  ),
-                  onPressed: () {
-                    if (audioProvider.isPlaying) {
-                      audioProvider.pause();
-                    } else {
-                      audioProvider.play();
-                    }
+                Selector<AudioProvider, bool>(
+                  selector: (_, provider) => provider.isPlaying,
+                  builder: (context, isPlaying, child) {
+                    return IconButton(
+                      icon: Icon(
+                        isPlaying ? Icons.pause : Icons.play_arrow,
+                        color: Colors.white,
+                      ),
+                      onPressed: () {
+                        final provider = Provider.of<AudioProvider>(context, listen: false);
+                        if (isPlaying) {
+                          provider.pause();
+                        } else {
+                          provider.play();
+                        }
+                      },
+                    );
                   },
                 ),
               ],

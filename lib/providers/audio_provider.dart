@@ -1,12 +1,14 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:just_audio_background/just_audio_background.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class AudioProvider extends ChangeNotifier {
   final AudioPlayer _audioPlayer = AudioPlayer();
   final OnAudioQuery _audioQuery = OnAudioQuery();
+  ConcatenatingAudioSource? _playlist;
 
   List<SongModel> _songs = [];
   List<SongModel> get songs => _songs;
@@ -31,10 +33,6 @@ class AudioProvider extends ChangeNotifier {
     _audioPlayer.playerStateStream.listen((playerState) {
       _isPlaying = playerState.playing;
       notifyListeners();
-
-      if (playerState.processingState == ProcessingState.completed) {
-        playNext();
-      }
     });
 
     _audioPlayer.durationStream.listen((newDuration) {
@@ -44,6 +42,11 @@ class AudioProvider extends ChangeNotifier {
 
     _audioPlayer.positionStream.listen((newPosition) {
       _position = newPosition;
+      notifyListeners();
+    });
+
+    _audioPlayer.currentIndexStream.listen((index) {
+      _currentIndex = index;
       notifyListeners();
     });
   }
@@ -66,15 +69,38 @@ class AudioProvider extends ChangeNotifier {
       uriType: UriType.EXTERNAL,
       ignoreCase: true,
     );
+
+    if (_songs.isNotEmpty) {
+      _playlist = ConcatenatingAudioSource(
+        children: _songs.map((song) {
+          return AudioSource.uri(
+            Uri.parse(song.uri!),
+            tag: MediaItem(
+              id: song.id.toString(),
+              album: song.album ?? "Unknown Album",
+              title: song.title,
+              artist: song.artist ?? "Unknown Artist",
+              artUri: Uri.parse("content://media/external/audio/media/${song.id}/albumart"),
+            ),
+          );
+        }).toList(),
+      );
+
+      try {
+        await _audioPlayer.setAudioSource(_playlist!);
+      } catch (e) {
+        debugPrint("Error setting playlist: $e");
+      }
+    }
+
     notifyListeners();
   }
 
   Future<void> playSong(int index) async {
     try {
-      _currentIndex = index;
-      await _audioPlayer.setAudioSource(
-        AudioSource.uri(Uri.parse(_songs[index].uri!)),
-      );
+      if (_songs.isEmpty) return;
+      // Just seek to the correct index in the playlist
+      await _audioPlayer.seek(Duration.zero, index: index);
       play();
     } catch (e) {
       debugPrint("Error playing song: $e");
@@ -108,10 +134,6 @@ class AudioProvider extends ChangeNotifier {
     // Let's use 1000 bars.
     int barCount = 1000;
 
-    // final waveform = List.generate(barCount, (index) {
-    //  return 0.2 + (random.nextDouble() * 0.8);
-    // });
-
     // Optimization: Generate simpler random
     final waveform = List<double>.filled(barCount, 0);
     for (int i = 0; i < barCount; i++) {
@@ -123,14 +145,14 @@ class AudioProvider extends ChangeNotifier {
   }
 
   void playNext() {
-    if (_currentIndex != null && _currentIndex! < _songs.length - 1) {
-      playSong(_currentIndex! + 1);
+    if (_audioPlayer.hasNext) {
+      _audioPlayer.seekToNext();
     }
   }
 
   void playPrevious() {
-    if (_currentIndex != null && _currentIndex! > 0) {
-      playSong(_currentIndex! - 1);
+    if (_audioPlayer.hasPrevious) {
+      _audioPlayer.seekToPrevious();
     }
   }
 }
