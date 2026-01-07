@@ -11,14 +11,21 @@ class PlayerScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        title: const Text("Now Playing"),
+    return GestureDetector(
+      onVerticalDragEnd: (details) {
+        // Swipe down to close player
+        if (details.velocity.pixelsPerSecond.dy > 300) {
+          Navigator.pop(context);
+        }
+      },
+      child: Scaffold(
         backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
-        elevation: 0,
-      ),
+        appBar: AppBar(
+          title: const Text("Now Playing"),
+          backgroundColor: Colors.black,
+          foregroundColor: Colors.white,
+          elevation: 0,
+        ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Column(
@@ -158,6 +165,7 @@ class PlayerScreen extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }

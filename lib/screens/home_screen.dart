@@ -99,11 +99,25 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         },
       ),
-      bottomNavigationBar: const Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          MiniPlayer(),
-        ],
+      bottomNavigationBar: SafeArea(
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.grey[900],
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: const Color.fromRGBO(0, 0, 0, 0.3),
+                blurRadius: 8,
+                offset: const Offset(0, -2),
+              ),
+            ],
+          ),
+          child: const ClipRRect(
+            borderRadius: BorderRadius.all(Radius.circular(12)),
+            child: MiniPlayer(),
+          ),
+        ),
       ),
     );
   }
