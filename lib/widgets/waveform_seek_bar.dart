@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/physics.dart';
 import 'package:provider/provider.dart';
 import '../providers/audio_provider.dart';
 
@@ -20,13 +21,24 @@ class WaveformSeekBar extends StatefulWidget {
   State<WaveformSeekBar> createState() => _WaveformSeekBarState();
 }
 
-class _WaveformSeekBarState extends State<WaveformSeekBar> {
+class _WaveformSeekBarState extends State<WaveformSeekBar> with TickerProviderStateMixin {
   final double _barWidth = 2.0;
   final double _barSpacing = 1.0;
 
   // Drag state
   bool _isDragging = false;
   Duration _dragPosition = Duration.zero;
+
+  // Inertia animation
+  AnimationController? _inertiaController;
+  double _currentPixel = 0;
+  double _totalWidth = 0;
+
+  @override
+  void dispose() {
+    _inertiaController?.dispose();
+    super.dispose();
+  }
 
   List<double> _getWaveform(BuildContext context) {
     // Helper to get waveform from provider
@@ -45,6 +57,8 @@ class _WaveformSeekBarState extends State<WaveformSeekBar> {
 
   void _onHorizontalDragUpdate(DragUpdateDetails details, double totalWidth) {
     if (totalWidth <= 0) return;
+
+    _totalWidth = totalWidth;
 
     // Use _dragPosition instead of widget.position while dragging
     Duration currentEffectivePosition = _dragPosition;
@@ -73,6 +87,7 @@ class _WaveformSeekBarState extends State<WaveformSeekBar> {
 
     setState(() {
       _dragPosition = newPos;
+      _currentPixel = pixel.clamp(0, totalWidth);
     });
 
     // Optional: Scrub audio while dragging?
@@ -84,6 +99,9 @@ class _WaveformSeekBarState extends State<WaveformSeekBar> {
   }
 
   void _onHorizontalDragStart(DragStartDetails details) {
+    // Stop any running inertia animation
+    _inertiaController?.stop();
+
     setState(() {
       _isDragging = true;
       _dragPosition = widget.position;
@@ -91,6 +109,63 @@ class _WaveformSeekBarState extends State<WaveformSeekBar> {
   }
 
   void _onHorizontalDragEnd(DragEndDetails details) {
+    final velocity = details.velocity.pixelsPerSecond.dx;
+
+    // If there's significant velocity, animate with inertia
+    // Keep _isDragging true during animation!
+    if (velocity.abs() > 100 && _totalWidth > 0) {
+      _startInertiaAnimation(-velocity); // Negative because drag direction is inverted
+    } else {
+      _finishDrag();
+    }
+  }
+
+  void _startInertiaAnimation(double velocity) {
+    _inertiaController?.dispose();
+    _inertiaController = AnimationController.unbounded(vsync: this);
+
+    // Use friction simulation for natural deceleration
+    final simulation = FrictionSimulation(
+      0.002, // friction coefficient - balanced for ~0.5s stop
+      _currentPixel,
+      velocity,
+    );
+
+    _inertiaController!.animateWith(simulation);
+
+    _inertiaController!.addListener(() {
+      if (_totalWidth <= 0) return;
+
+      // Stop animation if velocity drops below threshold
+      final currentVelocity = _inertiaController!.velocity.abs();
+      if (currentVelocity < 50) {
+        _inertiaController!.stop();
+        _finishDrag();
+        return;
+      }
+
+      double newPixel = _inertiaController!.value.clamp(0.0, _totalWidth);
+      double progress = newPixel / _totalWidth;
+      int ms = (widget.duration.inMilliseconds * progress).round();
+      Duration newPos = Duration(milliseconds: ms);
+
+      setState(() {
+        _dragPosition = newPos;
+        _currentPixel = newPixel;
+      });
+
+      widget.onChanged(newPos);
+    });
+
+    _inertiaController!.addStatusListener((status) {
+      if (status == AnimationStatus.completed || status == AnimationStatus.dismissed) {
+        _finishDrag();
+      }
+    });
+  }
+
+  void _finishDrag() {
+    if (!mounted) return;
     setState(() {
       _isDragging = false;
     });
