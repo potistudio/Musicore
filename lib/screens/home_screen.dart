@@ -1,9 +1,9 @@
 
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../providers/audio_provider.dart';
-import 'player_screen.dart';
 import 'package:on_audio_query/on_audio_query.dart';
+import 'package:provider/provider.dart';
+
+import '../providers/audio_provider.dart';
 import '../widgets/mini_player.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -87,12 +87,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 onTap: () {
                   Provider.of<AudioProvider>(context, listen: false).playSong(index);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const PlayerScreen(),
-                    ),
-                  );
                 },
               );
             },

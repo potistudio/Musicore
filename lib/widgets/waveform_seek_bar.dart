@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
 import 'package:provider/provider.dart';
+
 import '../providers/audio_provider.dart';
 
 class WaveformSeekBar extends StatefulWidget {

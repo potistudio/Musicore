@@ -1,24 +1,40 @@
 
 import 'package:flutter/material.dart';
+import 'package:on_audio_query/on_audio_query.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/audio_provider.dart';
 import '../widgets/waveform_seek_bar.dart';
-import 'package:on_audio_query/on_audio_query.dart';
 
 class PlayerScreen extends StatelessWidget {
   const PlayerScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onVerticalDragEnd: (details) {
-        // Swipe down to close player
-        if (details.velocity.pixelsPerSecond.dy > 300) {
-          Navigator.pop(context);
-        }
-      },
-      child: Scaffold(
+    return PopScope(
+      canPop: false, // Disable system back gesture, we use swipe down instead
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onPanEnd: (details) {
+          final velocity = details.velocity.pixelsPerSecond;
+
+          // Swipe down to close player (works regardless of how player was opened)
+          if (velocity.dy > 300 && velocity.dy.abs() > velocity.dx.abs()) {
+            Navigator.pop(context);
+            return;
+          }
+
+          // Horizontal swipe for track skip (only if clearly horizontal)
+          if (velocity.dx.abs() > velocity.dy.abs()) {
+            final provider = Provider.of<AudioProvider>(context, listen: false);
+            if (velocity.dx < -300) {
+              provider.playNext();
+            } else if (velocity.dx > 300) {
+              provider.playPrevious();
+            }
+          }
+        },
+        child: Scaffold(
         backgroundColor: Colors.black,
         appBar: AppBar(
           title: const Text("Now Playing"),
@@ -165,6 +181,7 @@ class PlayerScreen extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
       ),
     );

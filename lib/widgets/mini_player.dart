@@ -145,9 +145,10 @@ class _MiniPlayerState extends State<MiniPlayer> with SingleTickerProviderStateM
             },
             onPanEnd: (details) {
               final provider = Provider.of<AudioProvider>(context, listen: false);
+              final velocity = details.velocity.pixelsPerSecond;
 
-              // Check for vertical swipe up to open player
-              if (details.velocity.pixelsPerSecond.dy < -300) {
+              // Check for vertical swipe up to open player (only if clearly vertical)
+              if (velocity.dy < -300 && velocity.dy.abs() > velocity.dx.abs()) {
                 Navigator.push(
                   context,
                   PageRouteBuilder(
